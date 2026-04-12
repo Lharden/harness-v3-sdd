@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://harness.local/schemas/spec.schema.json",
+  "title": "Harness v3 Spec",
+  "description": "Schema para specs formais geradas pela skill write-spec",
+  "type": "object",
+  "required": ["title", "status", "executive_summary", "user_stories", "boundaries"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 3
+    },
+    "status": {
+      "type": "string",
+      "enum": ["Draft", "In Review", "Approved", "In Progress", "Implemented", "Archived"]
+    },
+    "created": {
+      "type": "string",
+      "format": "date"
+    },
+    "updated": {
+      "type": "string",
+      "format": "date"
+    },
+    "executive_summary": {
+      "type": "string",
+      "minLength": 20
+    },
+    "user_stories": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["id", "priority", "title", "description", "acceptance_criteria"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^US-\\d+$"},
+          "priority": {"type": "string", "enum": ["P1", "P2", "P3"]},
+          "title": {"type": "string"},
+          "description": {"type": "string"},
+          "acceptance_criteria": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["id", "given", "when", "then"],
+              "properties": {
+                "id": {"type": "string", "pattern": "^AC-\\d+$"},
+                "given": {"type": "string"},
+                "when": {"type": "string"},
+                "then": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "requirements": {
+      "type": "object",
+      "properties": {
+        "functional": {"type": "array"},
+        "non_functional": {"type": "array"}
+      }
+    },
+    "boundaries": {
+      "type": "object",
+      "required": ["always", "never"],
+      "properties": {
+        "always": {"type": "array", "items": {"type": "string"}},
+        "never": {"type": "array", "items": {"type": "string"}},
+        "ask": {"type": "array", "items": {"type": "string"}}
+      }
+    },
+    "needs_clarification": {
+      "type": "array",
+      "items": {"type": "string"}
+    },
+    "success_criteria": {
+      "type": "array"
+    }
+  }
+}
