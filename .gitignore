@@ -1,0 +1,32 @@
+# Runtime state (per-machine, NOT distributed)
+state.json
+signals.json
+.session-files-count
+debug-classify.log
+trace-current.md
+traces/
+backups/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local plugin state
+*.local.md
+.bootstrap-done
