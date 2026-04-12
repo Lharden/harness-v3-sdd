@@ -1,0 +1,66 @@
+{
+  "description": "Harness v3 SDD — Pipeline orchestrator with L0/L1/L2 classification, git guardrails, state snapshots, and auto-reclassification.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/harness-classify.sh\"",
+            "timeout": 10000,
+            "statusMessage": "Classificando tarefa..."
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/harness-git-guard.sh\"",
+            "timeout": 5000,
+            "statusMessage": "Git guardrails..."
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/harness-reclassify.sh\"",
+            "timeout": 5000
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/harness-precompact.sh\"",
+            "timeout": 10000,
+            "statusMessage": "Salvando snapshot de handoff..."
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/harness-session-start.sh\"",
+            "timeout": 15000,
+            "statusMessage": "Inicializando Harness v3..."
+          }
+        ]
+      }
+    ]
+  }
+}
