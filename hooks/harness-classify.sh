@@ -18,6 +18,21 @@ COUNTER_FILE="$HARNESS_DIR/.session-files-count"
 # Ensure harness dir exists
 mkdir -p "$HARNESS_DIR"
 
+# Acquire exclusive lock on state.json before any read/modify/write.
+# Without this, parallel sessions in Claude Code Desktop App can corrupt state.
+HOOK_DIR_REL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOCK_LIB="${HOOK_DIR_REL}/../scripts/state-lock.sh"
+if [[ -f "$LOCK_LIB" ]]; then
+  # shellcheck source=../scripts/state-lock.sh
+  source "$LOCK_LIB"
+  if ! acquire_state_lock; then
+    # Lock timeout — fail closed (no classification this turn). Prompt
+    # passes through unmodified. Better than corrupted state.json.
+    exit 0
+  fi
+  trap release_state_lock EXIT
+fi
+
 # ---------------------------------------------------------------------------
 # 1. Read input JSON and extract message
 # ---------------------------------------------------------------------------
