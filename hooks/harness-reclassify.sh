@@ -24,6 +24,18 @@ except Exception:
 
 [ -z "$FILE_PATH" ] && exit 0
 
+# Acquire exclusive lock on state.json before any read/modify/write.
+HOOK_DIR_REL="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOCK_LIB="${HOOK_DIR_REL}/../scripts/state-lock.sh"
+if [[ -f "$LOCK_LIB" ]]; then
+  # shellcheck source=../scripts/state-lock.sh
+  source "$LOCK_LIB"
+  if ! acquire_state_lock; then
+    exit 0
+  fi
+  trap release_state_lock EXIT
+fi
+
 # Pass file_path via env var to avoid shell injection
 # MSYS_NO_PATHCONV prevents Git Bash from mangling paths like /app/src → C:/Program Files/Git/app/src
 export MSYS_NO_PATHCONV=1
