@@ -22,6 +22,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 
 # ---------------------------------------------------------------------------
@@ -843,15 +844,24 @@ class TestPrecompact(HarnessTestBase):
             f.write("# Big trace\n" + "x" * 52000)
 
         traces_dir = os.path.join(HARNESS_DIR, "traces")
-        files_before = set(os.listdir(traces_dir)) if os.path.exists(traces_dir) else set()
+        os.makedirs(traces_dir, exist_ok=True)
+        # Marker de tempo: tudo criado/modificado >= t0 conta como rotacao desta run.
+        # Subtrai 1s para tolerar drift de mtime no Windows.
+        t0 = time.time() - 1.0
 
         code, out, err = run_hook(self.HOOK, {})
         self.assertEqual(code, 0)
 
-        # Verificar que foi rotacionado
-        files_after = set(os.listdir(traces_dir)) if os.path.exists(traces_dir) else set()
-        new_files = files_after - files_before
-        self.assertTrue(len(new_files) > 0, "Deve haver novo arquivo rotacionado em traces/")
+        # Verificar que foi rotacionado: mtime mais robusto que set-diff,
+        # porque o nome do arquivo (timestamp por segundo) pode colidir entre runs.
+        rotated = [
+            name for name in os.listdir(traces_dir)
+            if os.path.getmtime(os.path.join(traces_dir, name)) >= t0
+        ]
+        self.assertTrue(
+            len(rotated) > 0,
+            f"Deve haver arquivo rotacionado em traces/ (mtime >= t0). Listing: {os.listdir(traces_dir)}",
+        )
 
         # trace-current.md deve ter sido recriado (menor)
         size = os.path.getsize(TRACE_FILE)

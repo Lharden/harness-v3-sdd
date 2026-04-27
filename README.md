@@ -216,6 +216,60 @@ python -m pytest tests/ -v --cov=hooks --cov=scripts --cov-report=term-missing
 
 ---
 
+## Auxiliary Skills & Hooks
+
+These ship alongside the SDD pipeline and are independently useful:
+
+### `compress-memory` skill
+
+Safe compression for secondary memory files (recent.md, archive.md, today-*.md).
+Inspired by [caveman-compress](https://github.com/JuliusBrussee/caveman) but with
+hard blacklist for critical files (CLAUDE.md, MEMORY.md, specs, design docs,
+verification reports). Refuses any file with spec markers (Given/When/Then,
+[NEEDS CLARIFICATION], REQ-###). Always creates `.original.md` backup.
+
+```bash
+python skills/compress-memory/compress.py path/to/recent.md --dry-run
+python skills/compress-memory/compress.py path/to/recent.md --stats
+```
+
+Typical savings: 30-50% on prose-heavy memory files. Code, URLs, paths,
+versions, dates, headings, tables, and frontmatter are preserved verbatim.
+
+### `context7-trigger` hook
+
+UserPromptSubmit hook that detects mentions of libraries, frameworks, SDKs,
+or APIs in user prompts and injects a `[context7-hint]` reminder to consult
+[Context7 MCP](https://github.com/upstash/context7) before generating
+library-specific code. Conservative keyword list (~120 entries) plus verb
+patterns ("how to install X", "docs of Y") to avoid false positives.
+
+Wire it in your `~/.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PLUGIN_ROOT}/hooks/context7-trigger.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+The hook is silent for refactor/debug prompts and skips itself when the
+prompt already references context7 tools (no echo loop).
+
+---
+
 ## Configuration
 
 The plugin works out of the box with sensible defaults. Advanced users can customize
