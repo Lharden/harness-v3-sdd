@@ -236,6 +236,42 @@ python skills/compress-memory/compress.py path/to/recent.md --stats
 Typical savings: 30-50% on prose-heavy memory files. Code, URLs, paths,
 versions, dates, headings, tables, and frontmatter are preserved verbatim.
 
+### `state-lock` (file mutex for `state.json`)
+
+Cooperative `mkdir`-based mutex protecting `~/.claude/harness/state.json`
+from concurrent read-modify-write across parallel sessions. Required when
+running multiple Claude Code Desktop App windows simultaneously, since all
+sessions share the same singleton state file.
+
+Hooks that mutate state (`harness-classify.sh`, `harness-reclassify.sh`)
+acquire the lock before touching `state.json` and release it on EXIT via
+`trap`. Stale locks are auto-removed after 30 seconds (configurable via
+`STATE_LOCK_STALE_SECS`).
+
+Design choices:
+
+- **Cross-platform**: `mkdir` is atomic on every common filesystem,
+  including NTFS via Git Bash. No `flock` dependency.
+- **Fail-closed**: on lock timeout (5s default), the hook exits silently
+  rather than classifying with stale data. Worst case: the user loses one
+  pipeline turn. Best case: zero state corruption.
+- **Owner-aware**: `release_state_lock` only removes the lockdir if the
+  current PID matches the owner recorded in `state.json.lockdir/owner`.
+  Prevents one process from accidentally releasing another's lock.
+
+CLI for manual use and testing:
+
+```bash
+bash scripts/state-lock.sh acquire   # exit 0 on success, 1 on timeout
+bash scripts/state-lock.sh release
+bash scripts/state-lock.sh is-locked # exit 0 if locked, 1 if free
+bash scripts/state-lock.sh age-secs  # mtime age of the lockdir
+```
+
+Validated under stress: 10 concurrent workers each performing
+read-modify-write on `state.json` produce exactly 10 increments and 10
+unique writer IDs — zero lost updates, zero JSON corruption.
+
 ### `context7-trigger` hook
 
 UserPromptSubmit hook that detects mentions of libraries, frameworks, SDKs,
