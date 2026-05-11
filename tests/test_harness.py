@@ -110,6 +110,7 @@ class HarnessTestBase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
+        os.makedirs(HARNESS_DIR, exist_ok=True)
         cls._backup_dir = tempfile.mkdtemp(prefix="harness-test-backup-")
         for fname in ("state.json", ".session-files-count", "trace-current.md"):
             src = os.path.join(HARNESS_DIR, fname)
